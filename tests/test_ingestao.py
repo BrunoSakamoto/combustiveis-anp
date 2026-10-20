@@ -66,3 +66,21 @@ def test_semestre_corrente_e_sempre_baixado_de_novo(tmp_path, downloads):
     ingestao.baixar_semestre(Semestre(2026, 2), dir_bruto=tmp_path, hoje=hoje)
     ingestao.baixar_semestre(Semestre(2026, 2), dir_bruto=tmp_path, hoje=hoje)
     assert len(downloads) == 2
+
+
+@pytest.fixture
+def anp_sem_o_arquivo(monkeypatch):
+    def nao_publicado(url, destino, tentativas=3):
+        raise ingestao.NaoPublicado(url)
+
+    monkeypatch.setattr(ingestao, "_baixar", nao_publicado)
+
+
+def test_semestre_recente_ainda_nao_publicado_e_pulado(tmp_path, anp_sem_o_arquivo):
+    caminho = ingestao.baixar_semestre(Semestre(2026, 2), dir_bruto=tmp_path, hoje=date(2026, 10, 20))
+    assert caminho is None
+
+
+def test_semestre_antigo_sem_arquivo_e_erro(tmp_path, anp_sem_o_arquivo):
+    with pytest.raises(ingestao.NaoPublicado):
+        ingestao.baixar_semestre(Semestre(2024, 1), dir_bruto=tmp_path, hoje=date(2026, 10, 20))

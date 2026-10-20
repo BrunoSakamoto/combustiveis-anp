@@ -71,11 +71,17 @@ def url_do_semestre(sem: Semestre, base: str = config.URL_BASE_ANP) -> str:
     return base + f"{sem.nome}.zip"
 
 
+class NaoPublicado(Exception):
+    """A ANP ainda não publicou o arquivo (HTTP 404)."""
+
+
 def _baixar(url: str, destino: Path, tentativas: int = 3) -> None:
     temporario = destino.with_suffix(destino.suffix + ".parcial")
     for tentativa in range(1, tentativas + 1):
         try:
             with requests.get(url, stream=True, timeout=(10, 120)) as resp:
+                if resp.status_code == 404:
+                    raise NaoPublicado(url)  # não adianta tentar de novo
                 resp.raise_for_status()
                 with open(temporario, "wb") as f:
                     for bloco in resp.iter_content(chunk_size=1 << 20):
@@ -104,11 +110,17 @@ def baixar_semestre(
     dir_bruto: Path = config.DIR_BRUTO,
     forcar: bool = False,
     hoje: date | None = None,
-) -> Path:
-    """Garante `dir_bruto/ca-AAAA-SS.csv` e devolve o caminho."""
+) -> Path | None:
+    """Garante `dir_bruto/ca-AAAA-SS.csv` e devolve o caminho.
+
+    Devolve None quando um semestre recente (o atual ou o anterior) ainda não foi publicado:
+    a ANP só disponibiliza o arquivo de um semestre algum tempo depois de ele começar.
+    """
     dir_bruto.mkdir(parents=True, exist_ok=True)
     csv = dir_bruto / f"{sem.nome}.csv"
-    corrente = sem == Semestre.de_data(hoje or date.today())
+    atual = Semestre.de_data(hoje or date.today())
+    corrente = sem == atual
+    recente = sem >= Semestre(atual.ano - 1, 2) if atual.numero == 1 else sem >= Semestre(atual.ano, 1)
 
     if csv.exists() and not forcar and not corrente:
         log.info("%s já existe, pulando", csv.name)
@@ -116,15 +128,23 @@ def baixar_semestre(
 
     url = url_do_semestre(sem)
     log.info("Baixando %s", url)
-    if url.endswith(".zip"):
-        zip_path = dir_bruto / f"{sem.nome}.zip"
-        _baixar(url, zip_path)
-        _extrair_csv(zip_path, csv)
-        zip_path.unlink()
-    else:
-        _baixar(url, csv)
+    try:
+        if url.endswith(".zip"):
+            zip_path = dir_bruto / f"{sem.nome}.zip"
+            _baixar(url, zip_path)
+            _extrair_csv(zip_path, csv)
+            zip_path.unlink()
+        else:
+            _baixar(url, csv)
+    except NaoPublicado:
+        if not recente:
+            raise  # semestre antigo sem arquivo é erro de verdade (URL mudou)
+        log.warning("Semestre %s ainda não publicado pela ANP, pulando", sem)
+        return csv if csv.exists() else None
     return csv
 
 
 def baixar(desde: Semestre, ate: Semestre, **kwargs) -> list[Path]:
-    return [baixar_semestre(s, **kwargs) for s in intervalo(desde, ate)]
+    """Baixa o intervalo e devolve só os arquivos que existem."""
+    caminhos = [baixar_semestre(s, **kwargs) for s in intervalo(desde, ate)]
+    return [c for c in caminhos if c is not None]
