@@ -107,9 +107,9 @@ acenderam dois avisos. O comando `python -m combustiveis qualidade` mostra a cau
 - **Linhas vazias no arquivo da ANP.** O `ca-2025-01.csv` traz 9.114 linhas só com separadores
   (2,1% do arquivo). Não são registros perdidos: o relatório as conta à parte, e o teste de
   descarte só considera linhas com algum dado.
-- **Coletas com preço provavelmente errado.** Exemplos: diesel S10 a R$ 9,99 em Ourinhos, ou
-  um único posto do Guarujá com etanol acima de R$ 6 por semanas seguidas, mais de 60% acima do
-  resto do estado. Elas continuam na tabela de fatos, como a ANP publicou, marcadas em
+- **Coletas com preço provavelmente errado.** Exemplos: etanol a R$ 6,59 em Rio Claro e a
+  R$ 5,49 em São Roque, quase o preço da gasolina e cerca de 70% acima do resto do estado, ou
+  diesel S10 a R$ 9,99 em Ourinhos. Na série de 2024 a 2026 são 8 coletas em 2,1 milhões. Elas continuam na tabela de fatos, como a ANP publicou, marcadas em
   `fora_da_curva`, e ficam fora das médias.
 
   A regra precisou de duas iterações. Comparar com a média do município escondia o erro, porque
@@ -118,6 +118,10 @@ acenderam dois avisos. O comando `python -m combustiveis qualidade` mostra a cau
   R$ 6,60, 61% acima da mediana do Pará. A regra final marca a coleta quando ela está longe da
   mediana do estado **e** da mediana do próprio município; com menos de 3 coletas no município
   na semana, vale só o critério do estado. Os três cenários são testes unitários do dbt.
+
+  A regra é conservadora de propósito. Quando dois postos da mesma cidade repetem o mesmo valor
+  estranho (como os R$ 9,99 de Ourinhos em algumas semanas), ela não marca: prefere deixar passar
+  um erro raro a tirar das médias um preço que pode ser real.
 
 ## Testes
 
