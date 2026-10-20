@@ -4,8 +4,8 @@ Pipeline de ponta a ponta sobre a **Série Histórica de Preços de Combustívei
 arquivos semestrais, carrega no DuckDB, modela e testa com dbt, orquestra com Airflow e mostra o
 resultado num painel em Streamlit. Roda inteiro na sua máquina, sem conta em nuvem.
 
-![Painel com a variação de preço por estado, a série semanal e a comparação entre bandeiras](docs/painel-amostra.jpg)
-<sub>Captura feita com a amostra sintética do projeto (veja "Rodar sem internet").</sub>
+![Preço médio semanal da gasolina em SP, RJ, BA e AM, de janeiro de 2024 a junho de 2026](docs/painel-serie-semanal.png)
+<sub>Painel com os dados reais da ANP: preço médio semanal da gasolina em quatro estados, de janeiro de 2024 a junho de 2026.</sub>
 
 ## Perguntas que o projeto responde
 
