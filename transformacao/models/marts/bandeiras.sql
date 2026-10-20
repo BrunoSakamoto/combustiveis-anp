@@ -9,5 +9,6 @@ select
     count(*)                               as coletas,
     count(distinct cnpj)                   as postos
 from {{ ref('fct_coletas') }}
+where not fora_da_curva
 group by all
 having count(distinct cnpj) >= 5

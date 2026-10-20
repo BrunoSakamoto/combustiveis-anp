@@ -94,6 +94,16 @@ def gerar(destino: Path, ano: int, semestre: int, encoding: str = "utf-8-sig", s
                 ]))
         dia += timedelta(days=7)
 
+    # Como nos arquivos reais: algumas linhas só com separadores e um etanol lançado com o
+    # preço da gasolina. O pipeline tem de ignorar as primeiras e marcar o segundo.
+    linhas.extend([";" * (len(CABECALHO) - 1)] * 25)
+    for i, linha in enumerate(linhas):
+        campos = linha.split(";")
+        if campos[10] == "ETANOL" and campos[1] == "SP":
+            campos[12] = "6,89"
+            linhas[i] = ";".join(campos)
+            break
+
     destino.mkdir(parents=True, exist_ok=True)
     caminho = destino / f"ca-{ano}-{semestre:02d}.csv"
     caminho.write_text("\n".join(linhas) + "\n", encoding=encoding)

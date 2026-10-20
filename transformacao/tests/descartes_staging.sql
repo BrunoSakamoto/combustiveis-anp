@@ -1,10 +1,13 @@
--- Avisa se a limpeza do staging descartou mais de 2% das linhas de algum arquivo:
+-- Avisa se a limpeza do staging descartou mais de 2% dos registros de algum arquivo:
 -- costuma ser sinal de que a ANP mudou o formato (separador decimal, data, coluna).
+-- Linhas totalmente vazias (só separadores, comuns nos arquivos da ANP) não são registros
+-- e ficam fora da conta; o comando `python -m combustiveis qualidade` mostra quantas são.
 {{ config(severity='warn') }}
 
 with bruto as (
     select _arquivo as arquivo, count(*) as linhas_bruto
     from {{ source('bruto', 'precos_ca') }}
+    where coalesce(uf, municipio, cnpj, produto, data_coleta, valor_venda) is not null
     group by 1
 ),
 limpo as (

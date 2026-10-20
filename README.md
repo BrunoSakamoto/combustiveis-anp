@@ -99,6 +99,20 @@ rode `echo "AIRFLOW_UID=$(id -u)" > .env` antes, para os arquivos gerados ficare
 - **A DAG só orquestra.** Toda a lógica vive no pacote `combustiveis`. O mesmo código roda pela
   linha de comando, no Airflow e no CI.
 
+## O que os dados reais mostraram
+
+Rodando com a série de 2024 a 2026 (cerca de 2,1 milhões de coletas), os testes de qualidade
+acenderam dois avisos. O comando `python -m combustiveis qualidade` mostra a causa de cada um:
+
+- **Linhas vazias no arquivo da ANP.** O `ca-2025-01.csv` traz 9.114 linhas só com separadores
+  (2,1% do arquivo). Não são registros perdidos: o relatório as conta à parte, e o teste de
+  descarte só considera linhas com algum dado.
+- **Coletas com preço impossível.** Poucas coletas de etanol foram publicadas com preço de
+  gasolina, mais de 60% acima do estado na mesma semana. Elas continuam na tabela de fatos, como
+  a ANP publicou, marcadas em `fora_da_curva`, e ficam fora das médias. A comparação é com a
+  mediana do estado, não com a média do município: um valor errado puxa a média para perto
+  dele, e num município com dois postos não há como saber qual dos dois está errado.
+
 ## Testes
 
 ```bash

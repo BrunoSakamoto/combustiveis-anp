@@ -49,4 +49,29 @@ def test_relatorio_de_qualidade_roda(banco, capsys):
     qualidade.relatorio(banco)
     saida = capsys.readouterr().out
     assert "ca-2026-01.csv" in saida            # a tabela de descartes lista os arquivos
-    assert "60% acima ou abaixo" in saida       # e a seção de coletas fora da curva aparece
+    assert "fora da curva" in saida             # e a seção de coletas fora da curva aparece
+
+
+def test_linhas_vazias_nao_viram_registro(banco):
+    with duckdb.connect(str(banco), read_only=True) as con:
+        vazias = con.execute(
+            "select count(*) from bruto.precos_ca "
+            "where coalesce(uf, municipio, cnpj, produto, data_coleta, valor_venda) is null"
+        ).fetchone()[0]
+        restantes = con.execute(
+            "select count(*) from staging.stg_precos where uf is null"
+        ).fetchone()[0]
+    assert vazias == 50   # 25 por arquivo da amostra
+    assert restantes == 0
+
+
+def test_coleta_fora_da_curva_e_marcada_e_fica_fora_das_medias(banco):
+    with duckdb.connect(str(banco), read_only=True) as con:
+        marcadas = con.execute(
+            "select count(*) from analise.fct_coletas where fora_da_curva"
+        ).fetchone()[0]
+        maior_media_etanol_sp = con.execute(
+            "select max(preco_maximo) from analise.preco_semanal_uf where uf = 'SP' and produto = 'ETANOL'"
+        ).fetchone()[0]
+    assert marcadas >= 1
+    assert maior_media_etanol_sp < 6.89   # o etanol a R$ 6,89 não entrou nas agregações

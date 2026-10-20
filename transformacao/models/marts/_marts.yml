@@ -10,7 +10,17 @@ models:
           - not_null
           - entre:
               arguments: {minimo: -0.6, maximo: 0.6}
-              config: {severity: warn}
+              config:
+                severity: warn
+                # Coletas marcadas ficam fora das médias. O aviso só acende se forem muitas,
+                # o que indicaria um problema no arquivo, não um posto isolado.
+                warn_if: ">50"
+      - name: desvio_mediana_uf
+        description: Desvio em relação à mediana do estado, produto e semana; base da marcação abaixo.
+      - name: fora_da_curva
+        description: Coleta mais de 60% longe da mediana do estado na semana; fica fora das médias.
+        tests:
+          - not_null
 
   - name: preco_semanal_uf
     description: Preço médio, mediano, mínimo e máximo por semana, estado e produto.
