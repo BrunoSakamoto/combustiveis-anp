@@ -2,6 +2,7 @@
 
     python -m combustiveis pipeline --desde 2025-1 --ate 2026-1   # baixa, carrega e transforma
     python -m combustiveis amostra                                # usa dados sintéticos, sem internet
+    python -m combustiveis qualidade                              # descartes e valores fora da curva
     python -m combustiveis baixar | carregar | transformar
 """
 
@@ -14,7 +15,7 @@ import subprocess
 import sys
 from datetime import date
 
-from . import amostra, carga, config, ingestao
+from . import amostra, carga, config, ingestao, qualidade
 
 
 def transformar(banco=config.CAMINHO_BANCO) -> None:
@@ -43,6 +44,8 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("carregar")
     sub.add_parser("transformar")
     sub.add_parser("amostra", help="gera dados sintéticos em data/amostra.duckdb, sem internet")
+    q = sub.add_parser("qualidade", help="mostra por que linhas foram descartadas e o que foge da curva")
+    q.add_argument("--amostra", action="store_true", help="analisa o banco da amostra")
     args = p.parse_args(argv)
 
     if args.comando in ("baixar", "pipeline"):
@@ -61,6 +64,8 @@ def main(argv: list[str] | None = None) -> None:
         arquivos = amostra.gerar_padrao(config.DIR_AMOSTRA)
         carga.carregar(arquivos, banco=config.BANCO_AMOSTRA)
         transformar(config.BANCO_AMOSTRA)
+    elif args.comando == "qualidade":
+        qualidade.relatorio(config.BANCO_AMOSTRA if args.amostra else config.CAMINHO_BANCO)
 
 
 if __name__ == "__main__":

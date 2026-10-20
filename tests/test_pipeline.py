@@ -41,3 +41,12 @@ def test_bandeira_branca_mais_barata_na_amostra(banco):
             "select diferenca_media from analise.bandeiras where produto = 'GASOLINA' and bandeira = 'BRANCA'"
         ).fetchone()[0]
     assert diferenca < 0
+
+
+def test_relatorio_de_qualidade_roda(banco, capsys):
+    from combustiveis import qualidade
+
+    qualidade.relatorio(banco)
+    saida = capsys.readouterr().out
+    assert "ca-2026-01.csv" in saida            # a tabela de descartes lista os arquivos
+    assert "60% acima ou abaixo" in saida       # e a seção de coletas fora da curva aparece
