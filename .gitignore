@@ -1,0 +1,25 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# dados baixados e bancos gerados
+data/
+*.duckdb
+*.duckdb.wal
+
+# dbt
+transformacao/target/
+transformacao/logs/
+transformacao/dbt_packages/
+logs/
+
+# airflow standalone (quando roda fora do container)
+airflow.db
+airflow.cfg
+standalone_admin_password.txt
+simple_auth_manager_passwords.json*
+.env

@@ -1,0 +1,44 @@
+version: 2
+
+sources:
+  - name: bruto
+    description: CSVs da ANP carregados como texto pelo pacote `combustiveis.carga`.
+    schema: bruto
+    tables:
+      - name: precos_ca
+        description: Série histórica de preços de combustíveis automotivos, um arquivo por semestre.
+        loaded_at_field: _carregado_em
+
+models:
+  - name: stg_precos
+    description: Uma linha por coleta (posto, produto, dia), com tipos, padronização e sem duplicatas.
+    columns:
+      - name: uf
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [AC, AL, AP, AM, BA, CE, DF, ES, GO, MA, MT, MS, MG, PA, PB, PR,
+                         PE, PI, RJ, RN, RS, RO, RR, SC, SP, SE, TO]
+      - name: produto
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [GASOLINA, GASOLINA ADITIVADA, ETANOL, DIESEL, DIESEL S10, DIESEL S50, GNV]
+              config:
+                severity: warn   # produto novo na ANP deve avisar, não derrubar o pipeline
+      - name: cnpj
+        tests:
+          - not_null
+      - name: data_coleta
+        tests:
+          - not_null
+      - name: preco_venda
+        description: Preço de venda ao consumidor, em R$ por litro (ou por m³ no GNV).
+        tests:
+          - not_null
+          - entre:
+              arguments:
+                minimo: 0.5
+                maximo: 20

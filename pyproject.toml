@@ -1,0 +1,33 @@
+[project]
+name = "combustiveis-anp"
+version = "1.0.0"
+description = "Pipeline da série histórica de preços de combustíveis da ANP: ingestão, DuckDB, dbt e painel."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Bruno Araújo Sakamoto" }]
+dependencies = [
+    "duckdb>=1.4,<2",
+    "requests>=2.32,<3",
+    "dbt-duckdb>=1.10,<2",
+]
+
+[project.optional-dependencies]
+painel = ["streamlit>=1.45,<2", "plotly>=6,<8", "pandas>=2.2"]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["combustiveis"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

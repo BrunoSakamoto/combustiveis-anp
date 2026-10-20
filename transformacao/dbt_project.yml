@@ -1,0 +1,21 @@
+name: anp_combustiveis
+version: "1.0.0"
+profile: anp
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  anp_combustiveis:
+    staging:
+      +materialized: view
+      +schema: staging
+    marts:
+      +materialized: table
+      +schema: analise
+
+flags:
+  send_anonymous_usage_stats: false

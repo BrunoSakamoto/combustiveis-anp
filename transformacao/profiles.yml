@@ -1,0 +1,8 @@
+# O caminho do banco vem do pipeline (variável ANP_BANCO); o padrão serve para rodar o dbt à mão.
+anp:
+  target: local
+  outputs:
+    local:
+      type: duckdb
+      path: "{{ env_var('ANP_BANCO', '../data/combustiveis.duckdb') }}"
+      threads: 4

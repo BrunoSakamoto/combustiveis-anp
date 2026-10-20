@@ -1,0 +1,36 @@
+# docker compose up --build
+#   Airflow: http://localhost:8080  (DAG "combustiveis_anp"; dispare manualmente na primeira vez)
+#   Painel:  http://localhost:8501
+#
+# Uso local de portfólio: o Airflow roda em modo standalone (SQLite, sem login).
+# Não é uma configuração de produção.
+
+services:
+  airflow:
+    build:
+      context: .
+      dockerfile: docker/airflow.Dockerfile
+    command: airflow standalone
+    user: "${AIRFLOW_UID:-50000}:0"
+    ports:
+      - "8080:8080"
+    environment:
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/projeto/dags
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "true"
+      PYTHONPATH: /opt/airflow/projeto
+      ANP_DIR_DADOS: /opt/airflow/projeto/data
+      ANP_DBT_BIN: /home/airflow/dbt-venv/bin/dbt
+    volumes:
+      - ./:/opt/airflow/projeto
+
+  painel:
+    build:
+      context: .
+      dockerfile: docker/painel.Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      ANP_DIR_DADOS: /app/data
+    volumes:
+      - ./:/app

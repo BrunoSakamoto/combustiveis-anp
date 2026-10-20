@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: fct_coletas
+    description: Cada coleta de preço, com o desvio em relação à média do município na semana.
+    columns:
+      - name: desvio_media_municipio
+        description: "Ex.: -0,03 = 3% abaixo da média do município, produto e semana."
+        tests:
+          - not_null
+          - entre:
+              arguments: {minimo: -0.6, maximo: 0.6}
+              config: {severity: warn}
+
+  - name: preco_semanal_uf
+    description: Preço médio, mediano, mínimo e máximo por semana, estado e produto.
+    columns:
+      - name: preco_medio
+        tests:
+          - not_null
+          - entre:
+              arguments: {minimo: 0.5, maximo: 20}
+      - name: postos
+        tests:
+          - entre:
+              arguments: {minimo: 1, maximo: 100000}
+
+  - name: variacao_uf
+    description: Variação do preço por estado e produto, média das 4 primeiras contra as 4 últimas semanas.
+    columns:
+      - name: variacao
+        tests:
+          - not_null
+          - entre:
+              arguments: {minimo: -0.8, maximo: 2}
+              config: {severity: warn}
+
+  - name: bandeiras
+    description: Diferença média de preço de cada bandeira em relação aos concorrentes do mesmo município.
