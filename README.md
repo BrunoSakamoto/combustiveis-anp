@@ -107,11 +107,17 @@ acenderam dois avisos. O comando `python -m combustiveis qualidade` mostra a cau
 - **Linhas vazias no arquivo da ANP.** O `ca-2025-01.csv` traz 9.114 linhas só com separadores
   (2,1% do arquivo). Não são registros perdidos: o relatório as conta à parte, e o teste de
   descarte só considera linhas com algum dado.
-- **Coletas com preço impossível.** Poucas coletas de etanol foram publicadas com preço de
-  gasolina, mais de 60% acima do estado na mesma semana. Elas continuam na tabela de fatos, como
-  a ANP publicou, marcadas em `fora_da_curva`, e ficam fora das médias. A comparação é com a
-  mediana do estado, não com a média do município: um valor errado puxa a média para perto
-  dele, e num município com dois postos não há como saber qual dos dois está errado.
+- **Coletas com preço provavelmente errado.** Exemplos: diesel S10 a R$ 9,99 em Ourinhos, ou
+  um único posto do Guarujá com etanol acima de R$ 6 por semanas seguidas, mais de 60% acima do
+  resto do estado. Elas continuam na tabela de fatos, como a ANP publicou, marcadas em
+  `fora_da_curva`, e ficam fora das médias.
+
+  A regra precisou de duas iterações. Comparar com a média do município escondia o erro, porque
+  o próprio valor errado puxa a média. Comparar só com a mediana do estado marcava cidades
+  distantes que são caras de verdade: em Santarém (PA), três postos cobravam o mesmo etanol a
+  R$ 6,60, 61% acima da mediana do Pará. A regra final marca a coleta quando ela está longe da
+  mediana do estado **e** da mediana do próprio município; com menos de 3 coletas no município
+  na semana, vale só o critério do estado. Os três cenários são testes unitários do dbt.
 
 ## Testes
 
@@ -121,6 +127,9 @@ pytest -v
 
 Cobrem as regras de semestre e de URL, a idempotência do download e da carga, os dois encodings,
 e um teste ponta a ponta: amostra → DuckDB → `dbt build` com todos os testes de qualidade.
+O dbt tem ainda testes unitários (`transformacao/models/marts/_marts.yml`) que validam a regra de
+`fora_da_curva` com linhas fixas: posto isolado com preço errado, cidade cara com postos
+concordando e cidade com só dois postos.
 O GitHub Actions roda lint e testes a cada push.
 
 ## Estrutura

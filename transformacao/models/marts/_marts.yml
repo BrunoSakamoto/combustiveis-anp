@@ -18,7 +18,7 @@ models:
       - name: desvio_mediana_uf
         description: Desvio em relação à mediana do estado, produto e semana; base da marcação abaixo.
       - name: fora_da_curva
-        description: Coleta mais de 60% longe da mediana do estado na semana; fica fora das médias.
+        description: Preço provavelmente errado na origem (longe da mediana do estado e do município); fica fora das médias.
         tests:
           - not_null
 
@@ -47,3 +47,78 @@ models:
 
   - name: bandeiras
     description: Diferença média de preço de cada bandeira em relação aos concorrentes do mesmo município.
+
+unit_tests:
+  # Testam a regra de `fora_da_curva` com linhas fixas, sem depender de nenhum arquivo.
+  # Estado com 6 postos a R$ 4,00 em outras cidades, mais o caso de cada teste.
+  - name: posto_isolado_com_preco_de_gasolina_e_marcado
+    model: fct_coletas
+    given:
+      - input: ref('stg_precos')
+        rows:
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "1", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "2", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "3", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "4", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "5", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "6", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "7", preco_venda: 6.60}
+    expect:
+      rows:
+        - {cnpj: "1", fora_da_curva: false}
+        - {cnpj: "2", fora_da_curva: false}
+        - {cnpj: "3", fora_da_curva: false}
+        - {cnpj: "4", fora_da_curva: false}
+        - {cnpj: "5", fora_da_curva: false}
+        - {cnpj: "6", fora_da_curva: false}
+        - {cnpj: "7", fora_da_curva: true}
+
+  - name: cidade_cara_com_postos_concordando_nao_e_marcada
+    model: fct_coletas
+    given:
+      - input: ref('stg_precos')
+        rows:
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "1", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "2", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "3", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "4", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "5", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "6", preco_venda: 4.00}
+          - {uf: PA, municipio: SANTAREM, produto: ETANOL, semana: 2024-01-29, cnpj: "7", preco_venda: 6.60}
+          - {uf: PA, municipio: SANTAREM, produto: ETANOL, semana: 2024-01-29, cnpj: "8", preco_venda: 6.60}
+          - {uf: PA, municipio: SANTAREM, produto: ETANOL, semana: 2024-01-29, cnpj: "9", preco_venda: 6.60}
+    expect:
+      rows:
+        - {cnpj: "1", fora_da_curva: false}
+        - {cnpj: "2", fora_da_curva: false}
+        - {cnpj: "3", fora_da_curva: false}
+        - {cnpj: "4", fora_da_curva: false}
+        - {cnpj: "5", fora_da_curva: false}
+        - {cnpj: "6", fora_da_curva: false}
+        - {cnpj: "7", fora_da_curva: false}
+        - {cnpj: "8", fora_da_curva: false}
+        - {cnpj: "9", fora_da_curva: false}
+
+  - name: cidade_com_dois_postos_usa_so_o_criterio_do_estado
+    model: fct_coletas
+    given:
+      - input: ref('stg_precos')
+        rows:
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "1", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "2", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "3", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "4", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "5", preco_venda: 4.00}
+          - {uf: PA, municipio: BELEM, produto: ETANOL, semana: 2024-01-29, cnpj: "6", preco_venda: 4.00}
+          - {uf: PA, municipio: ORIXIMINA, produto: ETANOL, semana: 2024-01-29, cnpj: "7", preco_venda: 4.10}
+          - {uf: PA, municipio: ORIXIMINA, produto: ETANOL, semana: 2024-01-29, cnpj: "8", preco_venda: 6.60}
+    expect:
+      rows:
+        - {cnpj: "1", fora_da_curva: false}
+        - {cnpj: "2", fora_da_curva: false}
+        - {cnpj: "3", fora_da_curva: false}
+        - {cnpj: "4", fora_da_curva: false}
+        - {cnpj: "5", fora_da_curva: false}
+        - {cnpj: "6", fora_da_curva: false}
+        - {cnpj: "7", fora_da_curva: false}
+        - {cnpj: "8", fora_da_curva: true}

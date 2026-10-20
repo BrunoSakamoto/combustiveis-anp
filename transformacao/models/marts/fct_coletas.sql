@@ -1,12 +1,15 @@
 -- Fato principal: cada coleta, com o desvio do preço em relação à média do município
 -- naquela semana. É a base para comparar bandeiras e achar postos fora da curva.
 --
--- Coletas mais de 60% longe da mediana do ESTADO na semana ficam marcadas em `fora_da_curva`.
--- Mediana, porque um valor errado não a desloca; do estado, porque um município pode ter só
--- dois postos na semana, e aí não dá para saber qual dos dois está errado. Diferenças de
--- preço dentro de um estado ficam muito abaixo de 60%. Nos dados reais são casos raros
--- (ex.: etanol registrado com preço de gasolina). Continuam aqui, como a ANP publicou, mas
--- não entram nas médias das tabelas de análise.
+-- `fora_da_curva` marca coletas com preço provavelmente errado na origem (ex.: etanol
+-- registrado com preço de gasolina). Elas continuam aqui, como a ANP publicou, mas não
+-- entram nas médias das tabelas de análise. Uma coleta é marcada quando está mais de 60%
+-- longe da mediana do ESTADO na semana E também da mediana do MUNICÍPIO:
+--   - mediana, porque um valor errado não a desloca (a média, sim);
+--   - o estado sozinho não basta: em estados grandes uma cidade distante pode ser bem mais
+--     cara (ex.: Santarém no Pará), e se vários postos dela concordam, é preço local;
+--   - o município sozinho também não: com menos de 3 coletas na semana não há como saber
+--     qual valor está errado, então nesse caso vale só o critério do estado.
 
 with coletas as (
     select * from {{ ref('stg_precos') }}
@@ -32,11 +35,15 @@ select
     ) as desvio_media_municipio,
     round(preco_venda / median(preco_venda) over (partition by uf, produto, semana) - 1, 4)
         as desvio_mediana_uf,
+    round(preco_venda / median(preco_venda) over (partition by municipio, uf, produto, semana) - 1, 4)
+        as desvio_mediana_municipio,
+    count(*) over (partition by municipio, uf, produto, semana) as coletas_municipio,
     arquivo_origem
 from coletas
 )
 
 select
-    *,
-    abs(desvio_mediana_uf) > 0.6 as fora_da_curva
+    * exclude (desvio_mediana_municipio, coletas_municipio),
+    abs(desvio_mediana_uf) > 0.6
+    and (coletas_municipio < 3 or abs(desvio_mediana_municipio) > 0.6) as fora_da_curva
 from com_desvio
